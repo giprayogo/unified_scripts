@@ -2,8 +2,7 @@
 # 2019/04/23: pass-through all other arguments as rsync arguments
 # when?: converted to python (from perl)
 
-import imp
-readpm = imp.load_source('read_data_pm', '/mnt/lustre/scriptsForClusterNew/.read_data_pm.py')
+import read_data_pm as readpm
 
 import argparse
 import os

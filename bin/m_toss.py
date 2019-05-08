@@ -3,10 +3,7 @@
 # 2019/04/23: pass rsync arguments; delegate JobDir making to m_jobdir
 # 2019/03/08 ; first work
 
-# glue; due to hidden filenames
-import imp
-readpm = imp.load_source('read_data_pm', '/mnt/lustre/scriptsForClusterNew/.read_data_pm.py')
-#import read_data_pm.py as readpm
+import read_data_pm as readpm
 
 import os
 import subprocess
@@ -16,7 +13,6 @@ import re
 # from threading import Timer
 # secs = 3600
 # auto = Timer(secs, function)
-
 
 def build_lol(filename):
     with open(filename, 'r') as fh:

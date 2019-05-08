@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # 2019/04/23: pass through rsync arguments
 # when?: converted to python
-import imp
-readpm = imp.load_source('read_data_pm', '/mnt/lustre/scriptsForClusterNew/.read_data_pm.py')
+
+import read_data_pm as readpm
 
 import argparse
 import os

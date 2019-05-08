@@ -6,16 +6,15 @@
 #   Apr11  ; greatly simplified by using read_pm functions
 #   Apr4   ; add option for custom ip addr
 #   Mar19  ; translated to python by genki
+#   next logs will be on the git commits
 #
 ############################################
-
-# glue due to hidden filenames
-import imp
-readpm = imp.load_source('read_data_pm', '/mnt/lustre/scriptsForClusterNew/.read_data_pm.py')
 
 import argparse
 import os
 import subprocess
+
+import read_data_pm as readpm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cluster', '-c', type=str)
