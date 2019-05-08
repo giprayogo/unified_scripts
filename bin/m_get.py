@@ -8,9 +8,8 @@ import argparse
 import os
 import subprocess
 
-# manually adding 'rsync_arguments'
-parser = argparse.ArgumentParser(usage='%(prog)s [-h] [--files [FILES [FILES ...]]] [--cluster CLUSTER]\
-        \n[--username USERNAME] [--source SOURCE] [RSYNC_ARGUMENTS]')
+parser = argparse.ArgumentParser(
+        description='put files into clusters. can additionally accept rsync arguments')
 # for individual files/dir
 parser.add_argument('--files', '-f', nargs='*')
 # optional info if not supplied by *.jss, UserName, or Jobdir

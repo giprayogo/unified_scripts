@@ -8,11 +8,15 @@ import argparse
 import os
 import subprocess
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+        description='put files into clusters. can additionally accept rsync arguments')
+# for individual files/dir
 parser.add_argument('--files', '-f', nargs='*')
+# optional info if not supplied by *.jss, UserName, or Jobdir
 parser.add_argument('--cluster', '-c')
 parser.add_argument('--username', '-u')
 parser.add_argument('--destination', '-s')
+parser.add_argument('--no-delete', '-n', action='store_true')
 args, rsync_args = parser.parse_known_args()
 
 uname = args.username if args.username else readpm.get_uname()
@@ -22,25 +26,29 @@ datapm = readpm.read_perl_module_hashes(readpm.DATAPM)
 c1 = datapm['clusters']['unified']
 c2 = datapm['clusters'][cname]
 
-command = ['rsync', '-avz', '--progress', c2['rsync_option']]
-
 def build_command(key, arg):
     # output: [ a b1 a b2 ... ] from f(a, [ b1 b2 ... ])
     return [ x for y in [[key, x] for x in arg] for x in y ]
 
+# add includes and excludes, starting with data.pm defaults
+command = ['rsync', '-avz', '--progress', c2['rsync_option']]
 command.extend(build_command('--exclude', readpm.exclude))
 command.extend(build_command('--include', readpm.include))
 
-path = args.destination if args.destination else readpm.c2path(c1, c2, uname)
-files = args.files if args.files else [path]
+# rsync pass-through
 command.extend(rsync_args)
-command.append(os.getcwd())
-command.extend([ '{}:{}'.format(readpm.c2ip(c2, uname), os.path.join(path, x)) for x in files ])
 
-ssh = ['ssh', c2['ssh_option'], readpm.c2ip(c2, uname), 'mkdir -p {}'.format(path)]
+path = args.destination if args.destination else readpm.c2path(c1, c2, uname)
+files = args.files if args.files else [ os.path.join(os.getcwd(), '') ]
+command.extend([ x for x in files ])
+command.extend([ '{}:{}'.format(readpm.c2ip(c2, uname), os.path.join(path, '')) ])
 
-print(subprocess.list2cmdline(ssh))
+mkdir = list(filter(None, [ 'ssh', c2['ssh_option'], readpm.c2ip(c2, uname), 'mkdir -p {}'.format(path) ]))
+
+if args.no_delete:
+    command = [ x for x in command if x != '--delete' ]
 if not '--dry-run' in rsync_args:
-    subprocess.call(ssh)
+    print(subprocess.list2cmdline(mkdir))
+    subprocess.call(mkdir)
 print(subprocess.list2cmdline(command))
 subprocess.call(command)
