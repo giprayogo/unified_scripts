@@ -49,42 +49,41 @@ def create_jss(parameter):
     # lookup AND getting cpns
     # can be compacted/omitted ?
     # especially if we can combine with qc
-    def table_lookup(filename):
-        with open(filename, 'r') as data_fh:
-            lines = data_fh.readlines()
+    with open(filename, 'r') as data_fh:
+        lines = data_fh.readlines()
 
-            # get the keys
-            header_line = lines[0]
-            keys = [ c.lower() for c in header_line.split() ]
+        # get the keys
+        header_line = lines[0]
+        keys = [ c.lower() for c in header_line.split() ]
+        #para = { key: None for key in header_line.split() }
 
-            # skip '------' (lines[1])
+        # skip '------' (lines[1])
 
-            # verify data
-            data_lines = lines[2:]
+        # verify data
+        data_lines = lines[2:]
 
-            # helper, will be deleted
-            # cols[1] : cores
-            # cols[6] : identifier
-            # cols[5] : appli
-            # cols[0] : qclass
-            for line in data_lines:
-                cols =  [ l.lower() for l in line.split() ]
-                if not cols:
-                    continue
-                #print(cols)
-                if parameter.identifier:
-                    if parameter.qclass == cols[0] and cols[1] == parameter.cores and cols[6] == parameter.identifier and parameter.appli in cols[5].split('/'):
-                        for i, col in enumerate(cols):
-                            para[keys[i]] = cols[i]
-                            found = True
-                else:
-                    if parameter.qclass == cols[0] and cols[1] == parameter.cores and parameter.appli in cols[5].split('/'):
-                        for i, col in enumerate(cols):
-                            para[keys[i]] = cols[i]
-                            found = True
-        return found
+        # helper, will be deleted
+        # cols[1] : cores
+        # cols[6] : identifier
+        # cols[5] : appli
+        # cols[0] : qclass
+        for line in data_lines:
+            cols =  [ l.lower() for l in line.split() ]
+            if not cols:
+                continue
+            #print(cols)
+            if parameter.identifier:
+                if parameter.qclass == cols[0] and cols[1] == parameter.cores and cols[6] == parameter.identifier and parameter.appli in cols[5].split('/'):
+                    for i, col in enumerate(cols):
+                        para[keys[i]] = cols[i]
+                        found = True
+            else:
+                if parameter.qclass == cols[0] and cols[1] == parameter.cores and parameter.appli in cols[5].split('/'):
+                    for i, col in enumerate(cols):
+                        para[keys[i]] = cols[i]
+                        found = True
 
-    assert table_lookup(config_table)
+    assert found
     exit()
 
     sub_filename = str(parameter)
@@ -92,17 +91,13 @@ def create_jss(parameter):
     # writing function
     # can this be done without side-effect (instead of writing, return string to be written as file) ?
     with open(jss_template, 'r') as template_fh, open(sub_filename, 'w') as sub_fh:
-        for line in template_fh.readlines():
+        for line in template_fh:
             if '#VERSION' in line:
-                version = False
-                while not version:
-                    temp = input('The available versions are {}\n'.format(' '.join(line.split()[1:])))
-                    if temp in line.split()[1:]:
-                        print('Version {} is available'.format(temp))
-                        version = temp
-                    else:
-    	                print('Please try again (or CTRL-C to cancel)')
-                    line = line.replace('VERSION', version)
+                version = readpm.input_until_correct(
+                        'The available versions are {}\n'.format(' '.join(line.split()[1:])),
+                        lambda x: x in line.split()[1:])
+                line = line.replace('VERSION', version)
+
             # TODO: pythonic
             for key in para.keys():
                 line.replace(key.upper(), para[key].upper())
@@ -200,6 +195,6 @@ if __name__ == '__main__':
         jobnumber.write(lines[0])
 
     # don't forget to put it too
-    send = [ put, 'JobNumber' ]
-    print(subprocess.list2cmdline(send))
-    #subprocess.call(send)
+    put_jobnumber = [ put, 'JobNumber' ]
+    print(subprocess.list2cmdline(put_jobnumber))
+    #subprocess.call(put_jobnumber)
