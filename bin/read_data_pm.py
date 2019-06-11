@@ -74,10 +74,12 @@ def get_uname():
 def get_jname():
     return rw_spec_file('JobName')
 
-def input_until_correct(text, fn):
+# *args and **kwargs are for supplying ADDITIONAL argument to fn
+# the first argument is always the user input
+def input_until_correct(text, fn, *args, **kwargs):
     while(True):
         answer = input(text)
-        if fn(answer):
+        if fn(answer, *args, **kwargs):
             return answer
 
 def specify_cluster():
@@ -87,21 +89,24 @@ def specify_cluster():
         if len(sub_files) == 1:
             sub_file = sub_files[0]
         else:
-            sub_file = input_until_correct('choose one .jss_file: {}\n'.format(' '.join(sub_files)), os.path.exists)
+            choices = ' '.join([ '{}:{}'.format(x, y) for x,y in enumerate(sub_files) ])
+            sub_file_index = int(input_until_correct('choose one *.jss_file: {}\n'.format(choices),
+                lambda x,y: x in y, list(map(str, range(0, len(sub_files)))) ))
+            sub_file = sub_files[sub_file_index]
         assert len(sub_file.split('.')) > 1
         cluster = sub_file.split('.')[0]
     else:
         datapm = read_perl_module_hashes(DATAPM)
         valid  = [ {k: v} for k, v in datapm['clusters'].items() if v['type'] == 'calculation' or v['type'] == 'backbone' ]
         keys = sorted([ list(k)[0] for k in valid ]) # for better clarity
-        cluster = input_until_correct(', '.join(keys) + '\n', lambda x: x in keys)
+        cluster = input_until_correct(', '.join(keys) + '\n', lambda x,y: x in y)
         print(cluster)
     return cluster
 
 #TODO: work in progress
 def get_command_outputs(command, ip, sh='ssh', port=22, to=35):
     process = subprocess.Popen([sh, '-p', str(port), ip, command], stdout=subprocess.PIPE)
-    return cmdpipe.stdout
+    return process.stdout
 
 def c2path(c1, c2, uname):
     try:
