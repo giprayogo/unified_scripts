@@ -1,108 +1,93 @@
 #!/usr/bin/env python
-# toss.pl; reworked with python; experimental ; use minimal libraries
-# 2019/04/23: pass rsync arguments; delegate JobDir making to m_jobdir
-# 2019/03/08 ; first work
-
-import read_data_pm as readpm
-
 import os
 import subprocess
 import re
 
-# TODO: for auto sub thing; design not finalized
-# from threading import Timer
-# secs = 3600
-# auto = Timer(secs, function)
-
-def build_lol(filename):
-    with open(filename, 'r') as fh:
-        return [ x.split() for x in fh.readlines() ]
+import read_data_pm as readpm
 
 class Param():
-    def __init__(self, cname=None, appli=None, qclass=None, cores=None, identifier=None):
+    def __init__(self, cname=None, appli=None, qclass=None, cores=None, identifier=None, cpns=None, time=None):
         self.cname = cname
         self.appli = appli
         self.qclass = qclass
         self.cores = cores
         if identifier != 'jss':
             self.identifier = identifier
+        self.cpns = cpns
+        self.time = self.time
 
     def __str__(self):
-        return '.'.join([self.cname, self.appli, self.qclass, self.cores, 'jss'])
+        return '.'.join(filter(None([self.cname, self.appli, self.qclass, self.cores, self.identifier, 'jss'])))
 
-# TODO: rewrite in pythonic way
-# also I don't like how this function has a lot of side effects (writing files), can we split/rewirte?
-# and then also the dual dictionary thing which seems unnecessary
-def create_jss(parameter):
-    #print([cname, appli, qclass, cores, identifier])
+    def __repr__(self):
+        return '.'.join([self.cname, self.appli, self.qclass, self.cores, self.identifier, self.cpns, self.time])
 
-    jss_dir = os.path.join(os.environ['CLUSTER_SCRIPTS_TOP'], 'jobSubScripts')
-    config_table = os.path.join(jss_dir, '{}.data'.format(parameter.cname))
-    jss_template = os.path.join(jss_dir, '{}.{}'.format(parameter.cname, parameter.appli))
+    def __eq__(self, other):
+        if isinstance(other, Param):
+            # how to define this array of applis
+            # just use string compare in (ugly I know)
+            if self.qclass == other.qclass and self.cores == other.cores and self.identifier == other.identifier
+            ( self.appli in other.appli or other.appli in self.apli):
+                return True
+        return False
 
-    # TODO: be more pythonic
-    found = False
-    para = {}
+def create_jss(requested_parameter, jss_dir=os.path.join(os.environ['CLUSTER_SCRIPTS_TOP'], 'jobSubScripts')):
+    def table_lookup(filename, parameter):
+        with open(filename, 'r') as data_fh:
+            lines = data_fh.readlines()
 
-    # still translated from original
-    # seemingly this part only verify and nothing else
-    # lookup AND getting cpns
-    # can be compacted/omitted ?
-    # especially if we can combine with qc
-    with open(filename, 'r') as data_fh:
-        lines = data_fh.readlines()
+            # get the keys
+            # because 'class' is a python keyword, change class -> qclass
+            keys = [ x.lower() for x in lines[0].split() if x.lower() != 'class' else 'qclass' ]
 
-        # get the keys
-        header_line = lines[0]
-        keys = [ c.lower() for c in header_line.split() ]
-        #para = { key: None for key in header_line.split() }
+            # also skip '------' (lines[1])
+            data_lines = lines[2:]
 
-        # skip '------' (lines[1])
+            for line in data_lines:
+                cols =  [ l.lower() for l in line.split() ]
+                if not cols:
+                    continue
+                # don't forget to check if zipping identifier to none
+                available_parameter = Param(**{ key.lower(): value for key, value in zip(keys, line.split()) })
+                print(repr(available_parameter)
+                if available_parameter == parameter:
+                    available_parameter.appli = parameter.appli
+                    return available_parameter
 
-        # verify data
-        data_lines = lines[2:]
+            # TODO: if not found, read qc and ask if user want to make a new one
+            # basically see if the input value is within the range on qc
+            # qc = readpm.read_perl_module_hashes('/mnt/lustre/bin2/qc')
+            raise Exception
+        #endwith
+    #enddef
 
-        # helper, will be deleted
-        # cols[1] : cores
-        # cols[6] : identifier
-        # cols[5] : appli
-        # cols[0] : qclass
-        for line in data_lines:
-            cols =  [ l.lower() for l in line.split() ]
-            if not cols:
-                continue
-            #print(cols)
-            if parameter.identifier:
-                if parameter.qclass == cols[0] and cols[1] == parameter.cores and cols[6] == parameter.identifier and parameter.appli in cols[5].split('/'):
-                    for i, col in enumerate(cols):
-                        para[keys[i]] = cols[i]
-                        found = True
-            else:
-                if parameter.qclass == cols[0] and cols[1] == parameter.cores and parameter.appli in cols[5].split('/'):
-                    for i, col in enumerate(cols):
-                        para[keys[i]] = cols[i]
-                        found = True
+    def construct_jss(jss_template, parameter):
+        with open(jss_template, 'r') as template_fh:
+            jss = template_fh.read()
+            if '#VERSION' in content:
+                version = readpm.input_until_correct(
+                    'The available versions are {}\n'.format(' '.join(line.split()[1:])),
+                    lambda x: x in line.split()[1:])
+                jss = jss.replace('VERSION', version)
+            for key in vars(parameter).keys():
+                jss.replace(key.upper(), parameter.key.upper())
+            jss.replace('JOBNAME', jname)
+            return jss
+        #endwith
+    #enddef
 
-    assert found
+    config_table = os.path.join(jss_dir, '{}.data'.format(requested_parameter.cname))
+    jss_template = os.path.join(jss_dir, '{}.{}'.format(requested_parameter.cname, requested_parameter.appli))
+
+    print(str(requested_parameter))
+
+    final_parameter = table_lookup(config_table, requested_parameter)
+    sub_filename = str(final_parameter)
     exit()
 
-    sub_filename = str(parameter)
-
-    # writing function
-    # can this be done without side-effect (instead of writing, return string to be written as file) ?
-    with open(jss_template, 'r') as template_fh, open(sub_filename, 'w') as sub_fh:
-        for line in template_fh:
-            if '#VERSION' in line:
-                version = readpm.input_until_correct(
-                        'The available versions are {}\n'.format(' '.join(line.split()[1:])),
-                        lambda x: x in line.split()[1:])
-                line = line.replace('VERSION', version)
-
-            # TODO: pythonic
-            for key in para.keys():
-                line.replace(key.upper(), para[key].upper())
-            line.replace('JOBNAME', jname)
-            sub_fh.write(line)
+    # can this be done without side-effect (instead of writing here, return string to be written as file) ?
+    with open(sub_filename, 'w') as sub_fh:
+        sub_fh.write(construct_jss(jss_template, final_parameter))
     return sub_filename
 
 # functions related to the k-computer? I don't know if these are still relevant
@@ -127,9 +112,6 @@ if __name__ == '__main__':
 
     # read perl module
     datapm = readpm.read_perl_module_hashes('/mnt/lustre/scriptsForClusterNew/data.pm')
-    # planned feature to be able to add new entry to chk.pl
-    # basically see if the input value is within the range on qc
-    qc = readpm.read_perl_module_hashes('/mnt/lustre/bin2/qc')
 
     uname = readpm.get_uname()
     jname = readpm.get_jname()
