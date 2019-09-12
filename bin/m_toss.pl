@@ -207,10 +207,10 @@ if (-s 'JobDir') {
 
 # if dry run, do nothing
 if ($dry_run) {
-    my $put = "$ENV{CLUSTER_SCRIPTS_TOP}/m_put.py --dry-run -c $cname --dest $path";
+    my $put = "$ENV{CLUSTER_SCRIPTS_TOP}/m_put --dry-run -c $cname --dest $path";
     system "$put $tosssyncopt";
 } else {
-    my $put = "$ENV{CLUSTER_SCRIPTS_TOP}/m_put.py -c $cname --dest $path";
+    my $put = "$ENV{CLUSTER_SCRIPTS_TOP}/m_put -c $cname --dest $path";
     system "$put $tosssyncopt";
     #my $jobnum = `ssh $c2sshopt $c2ip "cd $path ; $c2pbs$c2sub -N $jname $jssfile"`; #pending
     my $jobnum = `ssh $c2sshopt $c2ip "cd $path ; $c2pbs$c2sub $jssfile"`;
