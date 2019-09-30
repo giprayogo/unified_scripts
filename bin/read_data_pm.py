@@ -85,12 +85,13 @@ def input_until_correct(text, fn, *args, **kwargs):
 def specify_cluster():
     sub_files = [ f for f in os.listdir('.')
             if os.path.isfile(f) and re.search(r'[a-zA-Z0-9]+\.jss*', f) ]
-    if len(sub_files) > 0:
-        if len(sub_files) == 1:
+    choices = list(set([ x.split('.')[0] for x in sub_files ]))
+    if len(choices) > 0:
+        if len(choices) == 1:
             sub_file = sub_files[0]
         else:
-            choices = ' '.join([ '{}:{}'.format(x, y) for x,y in enumerate(sub_files) ])
-            sub_file_index = int(input_until_correct('choose one *.jss_file: {}\n'.format(choices),
+            prompt = ' '.join([ '{}:{}'.format(x, y) for x,y in enumerate(sub_files) ])
+            sub_file_index = int(input_until_correct('choose one *.jss_file: {}\n'.format(prompt),
                 lambda x,y: x in y, list(map(str, range(0, len(sub_files)))) ))
             sub_file = sub_files[sub_file_index]
         assert len(sub_file.split('.')) > 1
