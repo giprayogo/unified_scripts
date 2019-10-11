@@ -100,7 +100,7 @@ def specify_cluster():
         datapm = read_perl_module_hashes(DATAPM)
         valid  = [ {k: v} for k, v in datapm['clusters'].items() if v['type'] == 'calculation' or v['type'] == 'backbone' ]
         keys = sorted([ list(k)[0] for k in valid ]) # for better clarity
-        cluster = input_until_correct(', '.join(keys) + '\n', lambda x,y: x in y)
+        cluster = input_until_correct(', '.join(keys) + '\n', lambda x,y: x in y, keys)
         print(cluster)
     return cluster
 
