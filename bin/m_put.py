@@ -19,8 +19,8 @@ parser.add_argument('--destination', '-s')
 parser.add_argument('--no-delete', '-n', action='store_true')
 args, rsync_args = parser.parse_known_args()
 
-uname = args.username if args.username else readpm.get_uname()
 cname = args.cluster if args.cluster else readpm.specify_cluster()
+uname = args.username if args.username else readpm.get_uname(cname)
 
 datapm = readpm.read_perl_module_hashes(readpm.DATAPM)
 c1 = datapm['clusters']['unified']
@@ -38,7 +38,7 @@ command.extend(build_command('--include', readpm.include))
 # rsync pass-through
 command.extend(rsync_args)
 
-path = args.destination if args.destination else readpm.c2path(c1, c2, uname)
+path = args.destination if args.destination else readpm.c2path(c1, c2, uname, cname)
 files = args.files if args.files else [ os.path.join(os.getcwd(), '') ]
 command.extend([ x for x in files ])
 command.extend([ '{}:{}'.format(readpm.c2ip(c2, uname), os.path.join(path, '')) ])

@@ -24,14 +24,14 @@ parser.add_argument('--ip', '-i', type=str)
 parser.add_argument('--shell', '-s', type=str, choices=['tcsh', 'bash'], default='tcsh')
 args = parser.parse_args()
 
-uname = args.username if args.username else readpm.get_uname()
 cname = args.cluster if args.cluster else readpm.specify_cluster()
+uname = args.username if args.username else readpm.get_uname(cname)
 
 datapm = readpm.read_perl_module_hashes(readpm.DATAPM)
 c1 = datapm['clusters']['unified']
 c2 = datapm['clusters'][cname]
 
-path = args.dir if args.dir else readpm.c2path(c1, c2, uname)
+path = args.dir if args.dir else readpm.c2path(c1, c2, uname, cname)
 
 sshcd = [ 'ssh', '-t', readpm.c2ip(c2, uname), 'cd {}; {}'.format(path, args.shell) ]
 print(' '.join(sshcd))

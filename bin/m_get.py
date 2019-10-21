@@ -19,17 +19,26 @@ parser.add_argument('--source-dir', '-s')
 parser.add_argument('--no-delete', '-n', action='store_true')
 args, rsync_args = parser.parse_known_args()
 
-uname = args.username if args.username else readpm.get_uname()
-cname = args.cluster if args.cluster else readpm.specify_cluster()
-
 datapm = readpm.read_perl_module_hashes(readpm.DATAPM)
+
+# cluster have to be defined first for multi-user-cluster setting
+if args.cluster:
+    cname = args.cluster
+else:
+    cname = readpm.specify_cluster()
+uname = args.username if args.username else readpm.get_uname(cname)
+
 c1 = datapm['clusters']['unified']
 c2 = datapm['clusters'][cname]
+
+path = readpm.cat_iffile(args.source_dir) if args.source_dir else readpm.c2path(c1, c2, uname, cname)
+files = args.files if args.files else [path]
 
 def build_command(a, b):
     # output: [ a b1 a b2 ... ] from f(a, [ b1 b2 ... ])
     return [ x for y in [[a, x] for x in b] for x in y ]
 
+# rsync command building
 # add includes and excludes, starting with data.pm defaults
 command = ['rsync', '-av', '--progress', '--delete', c2['rsync_option']]
 command.extend(build_command('--exclude', readpm.exclude))
@@ -37,9 +46,6 @@ command.extend(build_command('--include', readpm.include))
 
 # rsync pass-through
 command.extend(rsync_args)
-
-path = args.source_dir if args.source_dir else readpm.c2path(c1, c2, uname)
-files = args.files if args.files else [path]
 command.extend([ '{}:{}'.format(readpm.c2ip(c2, uname), os.path.join(path, x)) for x in files ])
 command.append(os.getcwd())
 

@@ -56,23 +56,41 @@ def read_perl_module_hashes(pm_filename):
     return pm_hash
 
 #TODO; fancier pattern here
-def rw_spec_file(spec_filename):
-    try:
-        with open(spec_filename, 'r') as spec_file:
-            lines = spec_file.readlines()
+def open_rw(filename):
+    """ Read lab-script-style single-line files;
+        assert that they are indeed single-lined;
+        Create file if not already exist """
+    if filename in os.listdir('.'):
+        with open(filename, 'r') as fh:
+            lines = fh.readlines()
             assert len(lines) == 1
             print(lines[0].strip())
-            spec = lines[0].strip()
-    except IOError:
-        spec = input('input {}\n'.format(spec_filename))
-        with open(spec_filename, 'w') as spec_file:
-            spec_file.write(spec)
-    return spec
+            content = lines[0].strip()
+    else:
+        content = input('input {}\n'.format(filename))
+        with open(filename, 'w') as fh:
+            fh.write(content)
+    return content
 
-def get_uname():
-    return rw_spec_file('UserName')
+def get_uname(cname=None):
+    """ Read UserName file or write it if it does not exist;.
+        Will not attempt to create cluster-specific UserName.CLUSTER file;
+        Such file has to be created manually """
+    #TODO: restructurize
+    if cname:
+        if 'UserName.'+cname in os.listdir('.'):
+            with open('UserName.'+cname, 'r') as fh:
+                lines = fh.readlines()
+                assert len(lines) == 1
+                print(lines[0].strip())
+                return lines[0].strip()
+        else:
+            return open_rw('UserName')
+    else:
+        return open_rw('UserName')
+
 def get_jname():
-    return rw_spec_file('JobName')
+    return open_rw('JobName')
 
 # *args and **kwargs are for supplying ADDITIONAL argument to fn
 # the first argument is always the user input
@@ -109,14 +127,37 @@ def get_command_outputs(command, ip, sh='ssh', port=22, to=35):
     process = subprocess.Popen([sh, '-p', str(port), ip, command], stdout=subprocess.PIPE)
     return process.stdout
 
-def c2path(c1, c2, uname):
+# "cluster 2" derivations
+def c2path(c1, c2, uname, cname):
+    """ return toss/fetch path from c1 to c2, given the username
+    will read JobDir file if it is given """
+    #try: # first try to see if there are any cluster-specific JobDir; JobDir.CLUSTERNAME
+    filenames = os.listdir('.')
+    if any([ x for x in filenames if 'JobDir' in x ]):
+        if 'JobDir.'+cname in filenames:
+            jobdir = 'JobDir.'+cname
+        else:
+            jobdir = 'JobDir'
+
+    # keep try-except for now; better alternative in the future
     try:
-        with open('JobDir', 'r') as jobdir_fh:
-            lines = jobdir_fh.readlines()
+        with open(jobdir, 'r') as fh:
+            lines = fh.readlines()
             assert len(lines) == 1
             return lines[0].strip()
     except IOError:
-        return os.path.join(c2['base_dir'].replace('USER', uname), os.getcwd().replace(c1['base_dir'], '').lstrip('/'), '')
+            return os.path.join(c2['base_dir'].replace('USER', uname), os.getcwd().replace(c1['base_dir'], '').lstrip('/'), '')
 
 def c2ip(c2, uname):
+    """ return complete ip address for c2 with substituted username """
     return c2['ip_address'].replace('USER', uname)
+
+def cat_iffile(filename):
+    """ return content of a file if it is an existing filename in current directory """
+    if filename in os.listdir('.'):
+        with open(filename, 'r') as _:
+            lines = _.readlines()
+            assert len(lines) == 1
+        return lines[0]
+    else:
+        return filename
