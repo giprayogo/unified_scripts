@@ -40,7 +40,7 @@ def build_command(a, b):
 
 # rsync command building
 # add includes and excludes, starting with data.pm defaults
-command = ['rsync', '-av', '--progress', '--delete', c2['rsync_option']]
+command = list(filter(None, ['rsync', '-av', '--progress', '--delete', c2['rsync_option']]))
 command.extend(build_command('--exclude', readpm.exclude))
 command.extend(build_command('--include', readpm.include))
 

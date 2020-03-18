@@ -21,7 +21,7 @@ parser.add_argument('--cluster', '-c', type=str)
 parser.add_argument('--username', '-u', type=str)
 parser.add_argument('--dir', '-d', type=str)
 parser.add_argument('--ip', '-i', type=str)
-parser.add_argument('--shell', '-s', type=str, choices=['tcsh', 'bash'], default='tcsh')
+parser.add_argument('--shell', '-s', type=str, choices=['tcsh', 'bash'], default='bash')
 args = parser.parse_args()
 
 cname = args.cluster if args.cluster else readpm.specify_cluster()

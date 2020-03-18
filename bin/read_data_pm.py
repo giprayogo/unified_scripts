@@ -138,6 +138,8 @@ def c2path(c1, c2, uname, cname):
             jobdir = 'JobDir.'+cname
         else:
             jobdir = 'JobDir'
+    else:
+        jobdir = 'JobDir'
 
     # keep try-except for now; better alternative in the future
     try:

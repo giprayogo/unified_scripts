@@ -31,7 +31,7 @@ def build_command(key, arg):
     return [ x for y in [[key, x] for x in arg] for x in y ]
 
 # add includes and excludes, starting with data.pm defaults
-command = ['rsync', '-avz', '--progress', c2['rsync_option']]
+command = list(filter(None, ['rsync', '-avz', '--progress', c2['rsync_option']]))
 command.extend(build_command('--exclude', readpm.exclude))
 command.extend(build_command('--include', readpm.include))
 
