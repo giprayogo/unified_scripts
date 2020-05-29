@@ -38,14 +38,22 @@ def build_command(a, b):
     # output: [ a b1 a b2 ... ] from f(a, [ b1 b2 ... ])
     return [ x for y in [[a, x] for x in b] for x in y ]
 
+# rsync pass-through
+# make sure that the optional options pre-empt the data.pm defaults
+# TODO: I don't like reading this part too
+command = list(filter(None, ['rsync', '-av', '--progress', '--delete']))
+command.extend(rsync_args)
+
+# TODO: make something that is more elegant
+if c2['rsync_option']:
+    command.extend(c2['rsync_option'])
+
 # rsync command building
 # add includes and excludes, starting with data.pm defaults
-command = list(filter(None, ['rsync', '-av', '--progress', '--delete', c2['rsync_option']]))
+#command = list(filter(None, ['rsync', '-av', '--progress', '--delete', c2['rsync_option']]))
 command.extend(build_command('--exclude', readpm.exclude))
 command.extend(build_command('--include', readpm.include))
 
-# rsync pass-through
-command.extend(rsync_args)
 command.extend([ '{}:{}'.format(readpm.c2ip(c2, uname), os.path.join(path, x)) for x in files ])
 command.append(os.getcwd())
 
